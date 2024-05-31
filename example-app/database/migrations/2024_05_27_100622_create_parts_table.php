@@ -12,13 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('parts', function (Blueprint $table) {
+            $table->id();
             $table->string('name');
-            $table->integer('serialnumber')->unsigned();
+            $table->integer('serialnumber');
 
             $table->unsignedBigInteger('car_id');
-            $table->foreign('car_id')->references('registration_number')->on('cars')->onDelete('cascade');
+            $table->foreign('car_id')->references('id')->on('cars')->onDelete('cascade');
 
-           // $table->timestamps(); 
+            //$table->foreignId('car_id')->constrained()->onDelete('cascade');
+            $table->timestamps(); 
         });
     }
 

@@ -12,15 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cars', function (Blueprint $table) {
-            $table->increments('registration_number');
-            $table->string('name');
-            $table->boolean('is_registrated');
+            $table->id();  // Auto-incrementing primary key
+            $table->string('name');  // Name of the car
+            $table->string('registration_number')->nullable();  // Registration number, nullable
+            $table->boolean('is_registered');  // Registration status
+            $table->timestamps();  // Created at and updated at timestamps
         });
     }
 
     /**
      * Reverse the migrations.
-     * (Undo everything that has been migrated)
+     * (Undo everything that has been migrated)ľ
      */
     public function down(): void
     {
