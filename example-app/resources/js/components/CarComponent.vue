@@ -15,23 +15,24 @@
                     v-model="newCar.registration_number"
                     class="form-control"
                     placeholder="Registration Number"
-                    :required="newCar.is_registered"
+                    :required="newCar.registration_required"
+                    @input="checkRegistration"
                 />
 
-                <div class="mb-3 form-check ml-3">
+                <div class="mb-3 form-check ml-3 block">
                     <input
                         type="checkbox"
                         v-model="newCar.is_registered"
                         class="form-check-input"
                         id="isRegistered"
                     />
-                    <label class="form-check-label" for="isRegistered"
-                        >Registered</label
+                    <label class="form-check-label p-2" for="isRegistered">
+                        Registered</label
                     >
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Add Car</button>
+            <button type="submit" class="btn btn-primary">Add Car <i class="mdi mdi-plus"></i></button>
         </form>
 
         <table id="carsTable" class="display">
@@ -65,6 +66,7 @@
             </tbody>
         </table>
 
+        <!--Edit modal-->
         <edit-modal :show="isModalVisible" @close="isModalVisible = false">
             <template v-slot:body>
                 <form @submit.prevent="updateCar">
@@ -73,7 +75,6 @@
                             v-model="currentCar.name"
                             class="form-control"
                             placeholder="Name"
-                            required
                         />
                     </div>
                     <div class="mb-3">
@@ -82,6 +83,7 @@
                             class="form-control"
                             placeholder="Registration Number"
                             :required="currentCar.is_registered"
+                            @input="checkRegistration"
                         />
                     </div>
                     <div class="mb-3 form-check">
@@ -101,17 +103,39 @@
                 </form>
             </template>
         </edit-modal>
+
+        <!--Error modal-->
+        <error-modal :show="showErrorModal" @close="showErrorModal = false">
+            
+            <template v-slot:header>
+                <h5 class="modal-title">Error</h5>
+            </template>
+            <template v-slot:body>
+                <p>{{ errorMessage }}</p>
+            </template>
+            
+        </error-modal>
     </div>
 </template>
 
 <script>
 import EditModal from "./EditModal.vue";
+import ErrorModal from "./ErrorModal.vue"; // Import your error modal component
 import { initializeDataTable, destroyDataTable } from "../datatable-init";
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
 export default {
     components: {
         EditModal,
+        ErrorModal,
+    },
+    setup() {
+        const router = useRouter();
+
+        const refreshPage = () => {
+            router.go(); // Reload the current route
+        };
+        return { refreshPage };
     },
     data() {
         return {
@@ -120,25 +144,20 @@ export default {
                 name: "",
                 registration_number: "",
                 is_registered: false,
+                registration_required: false,
             },
             currentCar: {
                 id: null,
                 name: "",
                 registration_number: "",
-                is_registered: false,
+                is_registered: "",
             },
             isModalVisible: false,
+            showErrorModal: false,
+            errorMessage: "",
         };
     },
-    setup() {
-        const router = useRouter();
 
-        const refreshPage = () => {
-            router.go(); // Reload the current route
-        };
-
-        return { refreshPage };
-    },
     mounted() {
         this.getCars();
     },
@@ -161,7 +180,21 @@ export default {
         },
         async addCar() {
             try {
-                const token = document.head.querySelector('meta[name="csrf-token"]').content;
+                // Check if registration number is empty and is_registered is true
+                if (
+                    this.newCar.is_registered &&
+                    !this.newCar.registration_number.trim()
+                ) {
+                    // Set error message and show error modal
+                    this.errorMessage =
+                        "Registration number is required for a registered car.";
+                    this.showErrorModal = true;
+                    return; // Prevent further execution
+                }
+
+                const token = document.head.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content;
                 const response = await fetch("/cars", {
                     method: "POST",
                     headers: {
@@ -179,16 +212,17 @@ export default {
                     registration_number: "",
                     is_registered: false,
                 };
-                
-                this.refreshPage();
 
+                this.refreshPage();
             } catch (error) {
                 console.error(error);
             }
         },
         async deleteCar(id) {
             try {
-                const token = document.head.querySelector('meta[name="csrf-token"]').content;
+                const token = document.head.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content;
                 const response = await fetch(`/cars/${id}`, {
                     method: "DELETE",
                     headers: {
@@ -201,7 +235,6 @@ export default {
                 }
                 this.getCars();
                 this.refreshPage();
-
             } catch (error) {
                 console.error(error);
             }
@@ -212,7 +245,9 @@ export default {
         },
         async updateCar() {
             try {
-                const token = document.head.querySelector('meta[name="csrf-token"]').content;
+                const token = document.head.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content;
                 const response = await fetch(`/cars/${this.currentCar.id}`, {
                     method: "PUT",
                     headers: {
@@ -226,15 +261,25 @@ export default {
                 }
                 this.getCars();
                 this.isModalVisible = false;
-               
             } catch (error) {
                 console.error(error);
             }
         },
+        checkRegistration() {
+            // If registration number is not empty, set is_registered to true
+            if (
+                this.newCar.registration_number &&
+                this.newCar.registration_number.trim() !== ""
+            ) {
+                this.newCar.is_registered = true;
+            } else {
+                this.newCar.is_registered = false;
+            }
+        },
     },
     beforeDestroy() {
-        if ($.fn.dataTable.isDataTable('#carsTable')) {
-            $('#carsTable').DataTable().destroy();
+        if ($.fn.dataTable.isDataTable("#carsTable")) {
+            $("#carsTable").DataTable().destroy();
         }
     },
 };
@@ -284,8 +329,21 @@ export default {
 .close {
     cursor: pointer;
 }
-button{
-    margin-right:1rem;
+button {
+    margin-right: 1rem;
     text-transform: uppercase;
+}
+input {
+    border: 1px black solid;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.form-check input {
+    padding: 12px;
+}
+.block {
+    display: flex;
+    align-items: center;
+    padding-right: 10px;
 }
 </style>

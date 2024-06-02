@@ -15,8 +15,9 @@
 <body>
     <div id="app">
         <navbar-component></navbar-component>
-        <car-component></car-component>
-        <part-component></part-component>
+        <!--<car-component></car-component>
+        <part-component></part-component>-->
+        <router-view></router-view>
        
     </div>
     @vite('resources/js/app.js')

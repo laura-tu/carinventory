@@ -3,10 +3,10 @@
         <h1 class="mb-4">Parts</h1>
 
         <form @submit.prevent="addPart" class="mb-4">
-            <div class="mb-3 flex-first">
+            <div class="mb-3 flex-first ">
                 <input
                     v-model="newPart.name"
-                    class="form-control"
+                    class="form-control "
                     placeholder="Name"
                     required
                 />
@@ -19,7 +19,7 @@
                 <div class="select-wrapper">
                     <select
                         v-model="newPart.car_id"
-                        class="form-control"
+                        class="form-control "
                         required
                     >
                         <option disabled value="">Select Car</option>
@@ -33,7 +33,7 @@
                     </select>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Add Part</button>
+            <button type="submit" class="btn btn-primary">Add Part <i class="mdi mdi-plus"></i></button>
         </form>
 
         <table id="partsTable" class="display">
@@ -68,7 +68,7 @@
         </table>
 
         <!-- Edit Modal -->
-        <custom-modal :show="isModalVisible" @close="isModalVisible = false">
+        <edit-modal :show="isModalVisible" @close="isModalVisible = false">
             <template v-slot:body>
                 <form @submit.prevent="updatePart">
                     <div class="mb-3">
@@ -107,18 +107,18 @@
                     </button>
                 </form>
             </template>
-        </custom-modal>
+        </edit-modal>
     </div>
 </template>
 
 <script>
-import CustomModal from "./EditModal.vue";
+import EditModal from "./EditModal.vue";
 import { initializeDataTable, destroyDataTable } from "../datatable-init";
 import { useRouter } from 'vue-router';
 
 export default {
     components: {
-        CustomModal,
+        EditModal,
     },
     data() {
         return {
@@ -228,7 +228,7 @@ export default {
                 }
                 this.getParts();
                 this.refreshPage();
-                
+
             } catch (error) {
                 console.error(error);
             }
@@ -273,28 +273,15 @@ export default {
 .flex-first {
     display: flex;
     justify-content: space-between;
-    width: 50%;
+    width: 50%; 
 }
 .form-control {
     margin-right: 4px;
 }
-.select-wrapper {
-    position: relative;
+.select-wrapper { 
     width: 100%;
 }
 
-.select-wrapper select {
-    /* Adjust padding to accommodate the down icon */
-    padding-right: 30px;
-}
-
-.select-wrapper i {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    pointer-events: none; /* Ensure the icon does not interfere with select box */
-}
 .modal-overlay {
     /*position: fixed;
       top: 0;
@@ -330,4 +317,14 @@ button {
     margin-right: 1rem;
     text-transform: uppercase;
 }
+input,select{
+    border: 1px black solid;
+    margin-top: 5px;
+    padding-top: 5px; 
+    padding-bottom: 5px;  
+    height: 50px;  
+    line-height: 30px;  
+    font-size: 16px;  
+}
+
 </style>

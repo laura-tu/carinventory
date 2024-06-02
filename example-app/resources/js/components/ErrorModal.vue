@@ -3,10 +3,10 @@
       <div class="modal-container">
         <div class="modal-header">
           <slot name="header">
-            <h5 class="modal-title">Edit Car</h5>
+            <h5 class="modal-title">Error</h5>
           </slot>
           <button type="button" class="close" @click="close">
-            
+            <!--<span>&times;</span>-->
             <i class=" mdi mdi-close"></i>
           </button>
         </div>
