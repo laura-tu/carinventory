@@ -6,14 +6,14 @@
             <div class="mb-3 flex-first">
                 <input
                     v-model="newCar.name"
-                    class="form-control "
+                    class="form-control"
                     placeholder="Name"
                     required
                 />
 
                 <input
                     v-model="newCar.registration_number"
-                    class="form-control "
+                    class="form-control"
                     placeholder="Registration Number"
                     :required="newCar.is_registered"
                 />
@@ -34,11 +34,12 @@
             <button type="submit" class="btn btn-primary">Add Car</button>
         </form>
 
-        <table class="table table-striped">
+        <table id="carsTable" class="display">
             <thead class="thead-dark">
                 <tr>
                     <th>Name</th>
                     <th>Registration Number</th>
+                    <th>Registered</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -46,15 +47,18 @@
                 <tr v-for="car in cars" :key="car.id">
                     <td>{{ car.name }}</td>
                     <td>{{ car.registration_number }}</td>
+                    <td>{{ car.is_registered }}</td>
                     <td>
                         <button @click="editCar(car)" class="btn btn-warning">
                             Edit
+                            <i class="mdi mdi-table-edit"></i>
                         </button>
                         <button
                             @click="deleteCar(car.id)"
                             class="btn btn-danger"
                         >
                             Delete
+                            <i class="mdi mdi-delete"></i>
                         </button>
                     </td>
                 </tr>
@@ -102,6 +106,9 @@
 
 <script>
 import EditModal from "./EditModal.vue";
+import { initializeDataTable, destroyDataTable } from "../datatable-init";
+import { useRouter } from 'vue-router';
+
 export default {
     components: {
         EditModal,
@@ -123,8 +130,22 @@ export default {
             isModalVisible: false,
         };
     },
+    setup() {
+        const router = useRouter();
+
+        const refreshPage = () => {
+            router.go(); // Reload the current route
+        };
+
+        return { refreshPage };
+    },
     mounted() {
         this.getCars();
+    },
+    updated() {
+        this.$nextTick(() => {
+            initializeDataTable("#carsTable");
+        });
     },
     methods: {
         async getCars() {
@@ -140,14 +161,12 @@ export default {
         },
         async addCar() {
             try {
-                const token = document.head.querySelector(
-                    'meta[name="csrf-token"]'
-                ).content; // Get CSRF token from meta tag
+                const token = document.head.querySelector('meta[name="csrf-token"]').content;
                 const response = await fetch("/cars", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": token, // Include CSRF token in request headers
+                        "X-CSRF-TOKEN": token,
                     },
                     body: JSON.stringify(this.newCar),
                 });
@@ -160,26 +179,29 @@ export default {
                     registration_number: "",
                     is_registered: false,
                 };
+                
+                this.refreshPage();
+
             } catch (error) {
                 console.error(error);
             }
         },
         async deleteCar(id) {
             try {
-                const token = document.head.querySelector(
-                    'meta[name="csrf-token"]'
-                ).content; // Get CSRF token from meta tag
+                const token = document.head.querySelector('meta[name="csrf-token"]').content;
                 const response = await fetch(`/cars/${id}`, {
                     method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": token, // Include CSRF token in request headers
+                        "X-CSRF-TOKEN": token,
                     },
                 });
                 if (!response.ok) {
                     throw new Error("Failed to delete car");
                 }
                 this.getCars();
+                this.refreshPage();
+
             } catch (error) {
                 console.error(error);
             }
@@ -190,9 +212,7 @@ export default {
         },
         async updateCar() {
             try {
-                const token = document.head.querySelector(
-                    'meta[name="csrf-token"]'
-                ).content;
+                const token = document.head.querySelector('meta[name="csrf-token"]').content;
                 const response = await fetch(`/cars/${this.currentCar.id}`, {
                     method: "PUT",
                     headers: {
@@ -206,27 +226,32 @@ export default {
                 }
                 this.getCars();
                 this.isModalVisible = false;
+               
             } catch (error) {
                 console.error(error);
             }
         },
     },
+    beforeDestroy() {
+        if ($.fn.dataTable.isDataTable('#carsTable')) {
+            $('#carsTable').DataTable().destroy();
+        }
+    },
 };
 </script>
+
 <style scoped>
 .outside-box {
     margin: 20px;
-    font-family:"Reddit Mono",monospace;
+    font-family: "Reddit Mono", monospace;
 }
 .flex-first {
     display: flex;
     justify-content: space-between;
-    
     width: 50%;
-    
 }
-.form-control{
-    margin-right:5px;
+.form-control {
+    margin-right: 5px;
 }
 .modal-overlay {
     position: fixed;
@@ -258,5 +283,9 @@ export default {
 }
 .close {
     cursor: pointer;
+}
+button{
+    margin-right:1rem;
+    text-transform: uppercase;
 }
 </style>

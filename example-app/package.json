@@ -16,7 +16,11 @@
         "vue": "^3.2.37"
     },
     "dependencies": {
+        "@mdi/font": "^7.4.47",
         "bootstrap-vue": "^2.23.1",
+        "datatables.net": "^2.0.8",
+        "datatables.net-dt": "^2.0.8",
+        "jquery": "^3.7.1",
         "vue": "^3.4.27",
         "vue-router": "^4.0.13"
     }

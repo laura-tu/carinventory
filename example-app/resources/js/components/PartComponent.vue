@@ -10,7 +10,6 @@
                     placeholder="Name"
                     required
                 />
-
                 <input
                     v-model="newPart.serialnumber"
                     class="form-control"
@@ -23,6 +22,7 @@
                         class="form-control"
                         required
                     >
+                        <option disabled value="">Select Car</option>
                         <option
                             v-for="car in cars"
                             :key="car.id"
@@ -31,15 +31,13 @@
                             {{ car.name }}
                         </option>
                     </select>
-                    <i class="fa fa-chevron-down"></i>
                 </div>
             </div>
-
             <button type="submit" class="btn btn-primary">Add Part</button>
         </form>
 
-        <table class="table table-striped">
-            <thead class="thead-dark">
+        <table id="partsTable" class="display">
+            <thead>
                 <tr>
                     <th>Name</th>
                     <th>Serial Number</th>
@@ -55,12 +53,14 @@
                     <td>
                         <button @click="editPart(part)" class="btn btn-warning">
                             Edit
+                            <i class="mdi mdi-table-edit"></i>
                         </button>
                         <button
                             @click="deletePart(part.id)"
                             class="btn btn-danger"
                         >
                             Delete
+                            <i class="mdi mdi-delete"></i>
                         </button>
                     </td>
                 </tr>
@@ -113,6 +113,8 @@
 
 <script>
 import CustomModal from "./EditModal.vue";
+import { initializeDataTable, destroyDataTable } from "../datatable-init";
+import { useRouter } from 'vue-router';
 
 export default {
     components: {
@@ -136,9 +138,23 @@ export default {
             isModalVisible: false,
         };
     },
+    setup() {
+        const router = useRouter();
+
+        const refreshPage = () => {
+            router.go(); // Reload the current route
+        };
+
+        return { refreshPage };
+    },
     mounted() {
         this.getParts();
         this.getCars();
+    },
+    updated() {
+        this.$nextTick(() => {
+            initializeDataTable("#partsTable");
+        });
     },
     methods: {
         async getParts() {
@@ -148,6 +164,9 @@ export default {
                     throw new Error("Failed to fetch parts");
                 }
                 this.parts = await response.json();
+                this.$nextTick(() => {
+                    initializeDataTable("#partsTable");
+                });
             } catch (error) {
                 console.error(error);
             }
@@ -185,6 +204,9 @@ export default {
                     serialnumber: "",
                     car_id: null,
                 };
+
+                this.refreshPage();
+
             } catch (error) {
                 console.error(error);
             }
@@ -205,6 +227,8 @@ export default {
                     throw new Error("Failed to delete part");
                 }
                 this.getParts();
+                this.refreshPage();
+                
             } catch (error) {
                 console.error(error);
             }
@@ -236,18 +260,19 @@ export default {
             }
         },
     },
+    beforeDestroy() {
+        destroyDataTable("#partsTable");
+    },
 };
 </script>
-
 <style scoped>
 .outside-box {
     margin: 20px;
-    font-family:"Reddit Mono",monospace;
+    font-family: "Reddit Mono", monospace;
 }
 .flex-first {
     display: flex;
     justify-content: space-between;
-
     width: 50%;
 }
 .form-control {
@@ -271,9 +296,9 @@ export default {
     pointer-events: none; /* Ensure the icon does not interfere with select box */
 }
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+    /*position: fixed;
+      top: 0;
+      left: 0;*/
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
@@ -300,5 +325,9 @@ export default {
 }
 .close {
     cursor: pointer;
+}
+button {
+    margin-right: 1rem;
+    text-transform: uppercase;
 }
 </style>
