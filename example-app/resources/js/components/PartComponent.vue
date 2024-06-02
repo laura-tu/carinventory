@@ -1,57 +1,63 @@
 <template>
     <div class="outside-box">
-        <h1 class="mb-4">Cars</h1>
+        <h1 class="mb-4">Parts</h1>
 
-        <form @submit.prevent="addCar" class="mb-4">
+        <form @submit.prevent="addPart" class="mb-4">
             <div class="mb-3 flex-first">
                 <input
-                    v-model="newCar.name"
-                    class="form-control "
+                    v-model="newPart.name"
+                    class="form-control"
                     placeholder="Name"
                     required
                 />
 
                 <input
-                    v-model="newCar.registration_number"
-                    class="form-control "
-                    placeholder="Registration Number"
-                    :required="newCar.is_registered"
+                    v-model="newPart.serialnumber"
+                    class="form-control"
+                    placeholder="Serial Number"
+                    required
                 />
-
-                <div class="mb-3 form-check ml-3">
-                    <input
-                        type="checkbox"
-                        v-model="newCar.is_registered"
-                        class="form-check-input"
-                        id="isRegistered"
-                    />
-                    <label class="form-check-label" for="isRegistered"
-                        >Registered</label
+                <div class="select-wrapper">
+                    <select
+                        v-model="newPart.car_id"
+                        class="form-control"
+                        required
                     >
+                        <option
+                            v-for="car in cars"
+                            :key="car.id"
+                            :value="car.id"
+                        >
+                            {{ car.name }}
+                        </option>
+                    </select>
+                    <i class="fa fa-chevron-down"></i>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Add Car</button>
+            <button type="submit" class="btn btn-primary">Add Part</button>
         </form>
 
         <table class="table table-striped">
             <thead class="thead-dark">
                 <tr>
                     <th>Name</th>
-                    <th>Registration Number</th>
+                    <th>Serial Number</th>
+                    <th>Car</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="car in cars" :key="car.id">
-                    <td>{{ car.name }}</td>
-                    <td>{{ car.registration_number }}</td>
+                <tr v-for="part in parts" :key="part.id">
+                    <td>{{ part.name }}</td>
+                    <td>{{ part.serialnumber }}</td>
+                    <td>{{ part.car.name }}</td>
                     <td>
-                        <button @click="editCar(car)" class="btn btn-warning">
+                        <button @click="editPart(part)" class="btn btn-warning">
                             Edit
                         </button>
                         <button
-                            @click="deleteCar(car.id)"
+                            @click="deletePart(part.id)"
                             class="btn btn-danger"
                         >
                             Delete
@@ -61,12 +67,13 @@
             </tbody>
         </table>
 
-        <edit-modal :show="isModalVisible" @close="isModalVisible = false">
+        <!-- Edit Modal -->
+        <custom-modal :show="isModalVisible" @close="isModalVisible = false">
             <template v-slot:body>
-                <form @submit.prevent="updateCar">
+                <form @submit.prevent="updatePart">
                     <div class="mb-3">
                         <input
-                            v-model="currentCar.name"
+                            v-model="currentPart.name"
                             class="form-control"
                             placeholder="Name"
                             required
@@ -74,59 +81,77 @@
                     </div>
                     <div class="mb-3">
                         <input
-                            v-model="currentCar.registration_number"
+                            v-model="currentPart.serialnumber"
                             class="form-control"
-                            placeholder="Registration Number"
-                            :required="currentCar.is_registered"
+                            placeholder="Serial Number"
+                            required
                         />
                     </div>
-                    <div class="mb-3 form-check">
-                        <input
-                            type="checkbox"
-                            v-model="currentCar.is_registered"
-                            class="form-check-input"
-                            id="editIsRegistered"
-                        />
-                        <label class="form-check-label" for="editIsRegistered"
-                            >Registered</label
+                    <div class="mb-3">
+                        <select
+                            v-model="currentPart.car_id"
+                            class="form-control"
+                            required
                         >
+                            <option
+                                v-for="car in cars"
+                                :key="car.id"
+                                :value="car.id"
+                            >
+                                {{ car.name }}
+                            </option>
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary">
                         Save changes
                     </button>
                 </form>
             </template>
-        </edit-modal>
+        </custom-modal>
     </div>
 </template>
 
 <script>
-import EditModal from "./EditModal.vue";
+import CustomModal from "./EditModal.vue";
+
 export default {
     components: {
-        EditModal,
+        CustomModal,
     },
     data() {
         return {
+            parts: [],
             cars: [],
-            newCar: {
+            newPart: {
                 name: "",
-                registration_number: "",
-                is_registered: false,
+                serialnumber: "",
+                car_id: null,
             },
-            currentCar: {
+            currentPart: {
                 id: null,
                 name: "",
-                registration_number: "",
-                is_registered: false,
+                serialnumber: "",
+                car_id: null,
             },
             isModalVisible: false,
         };
     },
     mounted() {
+        this.getParts();
         this.getCars();
     },
     methods: {
+        async getParts() {
+            try {
+                const response = await fetch("/parts");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch parts");
+                }
+                this.parts = await response.json();
+            } catch (error) {
+                console.error(error);
+            }
+        },
         async getCars() {
             try {
                 const response = await fetch("/cars");
@@ -138,73 +163,73 @@ export default {
                 console.error(error);
             }
         },
-        async addCar() {
+        async addPart() {
             try {
                 const token = document.head.querySelector(
                     'meta[name="csrf-token"]'
-                ).content; // Get CSRF token from meta tag
-                const response = await fetch("/cars", {
+                ).content;
+                const response = await fetch("/parts", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": token, // Include CSRF token in request headers
+                        "X-CSRF-TOKEN": token,
                     },
-                    body: JSON.stringify(this.newCar),
+                    body: JSON.stringify(this.newPart),
                 });
                 if (!response.ok) {
-                    throw new Error("Failed to add car");
+                    throw new Error("Failed to add part");
                 }
-                this.getCars();
-                this.newCar = {
+                this.getParts();
+                this.newPart = {
                     name: "",
-                    registration_number: "",
-                    is_registered: false,
+                    serialnumber: "",
+                    car_id: null,
                 };
             } catch (error) {
                 console.error(error);
             }
         },
-        async deleteCar(id) {
-            try {
-                const token = document.head.querySelector(
-                    'meta[name="csrf-token"]'
-                ).content; // Get CSRF token from meta tag
-                const response = await fetch(`/cars/${id}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": token, // Include CSRF token in request headers
-                    },
-                });
-                if (!response.ok) {
-                    throw new Error("Failed to delete car");
-                }
-                this.getCars();
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        editCar(car) {
-            this.currentCar = { ...car };
-            this.isModalVisible = true;
-        },
-        async updateCar() {
+        async deletePart(id) {
             try {
                 const token = document.head.querySelector(
                     'meta[name="csrf-token"]'
                 ).content;
-                const response = await fetch(`/cars/${this.currentCar.id}`, {
+                const response = await fetch(`/parts/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": token,
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to delete part");
+                }
+                this.getParts();
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        editPart(part) {
+            this.currentPart = { ...part };
+            this.isModalVisible = true;
+        },
+        async updatePart() {
+            try {
+                const token = document.head.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content;
+                const response = await fetch(`/parts/${this.currentPart.id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRF-TOKEN": token,
                     },
-                    body: JSON.stringify(this.currentCar),
+                    body: JSON.stringify(this.currentPart),
                 });
                 if (!response.ok) {
-                    throw new Error("Failed to update car");
+                    throw new Error("Failed to update part");
                 }
-                this.getCars();
+                this.getParts();
                 this.isModalVisible = false;
             } catch (error) {
                 console.error(error);
@@ -213,6 +238,7 @@ export default {
     },
 };
 </script>
+
 <style scoped>
 .outside-box {
     margin: 20px;
@@ -221,12 +247,28 @@ export default {
 .flex-first {
     display: flex;
     justify-content: space-between;
-    
+
     width: 50%;
-    
 }
-.form-control{
-    margin-right:5px;
+.form-control {
+    margin-right: 4px;
+}
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-wrapper select {
+    /* Adjust padding to accommodate the down icon */
+    padding-right: 30px;
+}
+
+.select-wrapper i {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none; /* Ensure the icon does not interfere with select box */
 }
 .modal-overlay {
     position: fixed;

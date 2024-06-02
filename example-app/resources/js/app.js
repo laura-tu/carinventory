@@ -6,37 +6,18 @@
 
 import './bootstrap';
 import { createApp } from 'vue';
+import router from './routes/router';
 
-/**
- * Create a fresh Vue application instance.
- */
 import CarComponent from './components/CarComponent.vue';
+import PartComponent from './components/PartComponent.vue';
 import NavbarComponent from './components/NavbarComponent.vue';
 const app = createApp({});
 
-/**
- * Import and register components.
- */
+app.use(router);
 
-//import ExampleComponent from './components/ExampleComponent.vue';
-
-
-//app.component('example-component', ExampleComponent);
 app.component('navbar-component',NavbarComponent);
+
 app.component('car-component', CarComponent);
-
-
-/**
- * Automatically register Vue components.
- * Uncomment the following block to enable automatic component registration.
- */
-
-// Object.entries(import.meta.glob('./**/*.vue', { eager: true })).forEach(([path, definition]) => {
-//     app.component(path.split('/').pop().replace(/\.\w+$/, ''), definition.default);
-// });
-
-/**
- * Mount the application to an HTML element with an "id" attribute of "app".
- */
+app.component('part-component', PartComponent);
 
 app.mount('#app');
